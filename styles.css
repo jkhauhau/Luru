@@ -5,7 +5,7 @@
 }
 
 body {
-  font-family: 'Noto Sans JP', sans-serif;
+  font-family: 'Noto Sans JP', 'Noto Sans KR', sans-serif;
   line-height: 1.6;
   color: #333;
   background-color: #f8f8f8;
@@ -17,8 +17,13 @@ header {
   margin-bottom: 30px;
 }
 
-h1 {
+h1, h2, h3 {
   color: #3a3a3a;
+  margin-bottom: 10px;
+}
+
+section {
+  margin-bottom: 30px;
 }
 
 .upload-section {
@@ -26,12 +31,19 @@ h1 {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-bottom: 30px;
 }
 
 input[type="file"] {
   margin: 10px 0;
+  display: block;
+}
+
+input[type="text"] {
+  padding: 8px;
   width: 100%;
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
 button {
@@ -42,6 +54,7 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
+  margin-top: 5px;
 }
 
 button:hover {
@@ -53,4 +66,52 @@ button:hover {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.kanji-set {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.kanji-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.kanji {
+  font-size: 72px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.kunyomi-box, .onyomi-box {
+  flex: 1;
+  min-width: 200px;
+}
+
+.word-list {
+  font-size: 18px;
+}
+
+.kanji-input-form {
+  background-color: #f1f1f1;
+  padding: 15px;
+  border-radius: 8px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
 }
