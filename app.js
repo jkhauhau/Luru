@@ -4,6 +4,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const fileInput = document.getElementById('textbook-image');
   const kanjiContainer = document.getElementById('kanji-container');
   
+  // 저장된 한자 세트 배열
+  let kanjiSets = [];
+  
+  // 로컬 스토리지에서 데이터 불러오기
+  loadFromLocalStorage();
+  
   // 파일 업로드 이벤트 처리
   uploadBtn.addEventListener('click', function() {
     if (fileInput.files.length > 0) {
@@ -27,15 +33,23 @@ document.addEventListener('DOMContentLoaded', function() {
       
       // 이미지 로드 후 세트 생성 UI 표시
       imgElement.onload = function() {
-        // 2. 기존 콘텐츠 지우기
-        kanjiContainer.innerHTML = '';
+        // 2. 기존 콘텐츠 지우기 (입력 폼과 세트는 유지)
+        // 이미지만 업데이트하는 방식으로 변경
+        const existingImg = kanjiContainer.querySelector('img');
+        if (existingImg) {
+          kanjiContainer.replaceChild(imgElement, existingImg);
+        } else {
+          kanjiContainer.insertBefore(imgElement, kanjiContainer.firstChild);
+        }
         
-        // 3. 이미지 표시
-        kanjiContainer.appendChild(imgElement);
+        // 입력 폼이 없으면 추가
+        if (!document.querySelector('.kanji-input-form')) {
+          const inputForm = createKanjiInputForm();
+          kanjiContainer.appendChild(inputForm);
+        }
         
-        // 4. 수동 입력 폼 추가
-        const inputForm = createKanjiInputForm();
-        kanjiContainer.appendChild(inputForm);
+        // 저장된 세트가 없으면 저장된 세트 표시
+        renderKanjiSets();
       };
     };
     
@@ -73,9 +87,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const onyomi = document.getElementById('onyomi-input').value;
         
         if (kanji) {
-          // 한자 세트 생성 및 표시
-          const kanjiSet = createKanjiSet(kanji, kunyomi, onyomi);
-          kanjiContainer.appendChild(kanjiSet);
+          // 한자 세트 데이터 생성 및 저장
+          const kanjiSetData = {
+            kanji: kanji,
+            kunyomi: kunyomi,
+            onyomi: onyomi,
+            id: Date.now() // 고유 ID 생성
+          };
+          
+          // 배열에 추가
+          kanjiSets.push(kanjiSetData);
+          
+          // 로컬 스토리지에 저장
+          saveToLocalStorage();
+          
+          // 화면에 표시
+          const kanjiSetElement = createKanjiSetElement(kanjiSetData);
+          kanjiContainer.appendChild(kanjiSetElement);
           
           // 입력 필드 초기화
           document.getElementById('kanji-input').value = '';
@@ -90,25 +118,27 @@ document.addEventListener('DOMContentLoaded', function() {
     return formDiv;
   }
   
-  // 한자 세트 생성 함수
-  function createKanjiSet(kanji, kunyomi, onyomi) {
+  // 한자 세트 HTML 요소 생성 함수
+  function createKanjiSetElement(data) {
     const setDiv = document.createElement('div');
     setDiv.className = 'kanji-set';
+    setDiv.dataset.id = data.id; // 데이터 속성으로 ID 저장
     
     setDiv.innerHTML = `
       <div class="kanji-box">
-        <div class="kanji">${kanji}</div>
+        <div class="kanji">${data.kanji}</div>
         <button class="stroke-order-toggle">획순 보기</button>
         <div class="stroke-order-gif" style="display:none;">
-          <img src="https://kakijun.com/wp-content/order/${kanji}.gif" alt="${kanji} 획순" onerror="this.src='https://placehold.co/200x200/lightgray/gray?text=GIF+없음';">
+          <img src="https://kakijun.com/wp-content/order/${data.kanji}.gif" alt="${data.kanji} 획순" onerror="this.src='https://placehold.co/200x200/lightgray/gray?text=GIF+없음';">
         </div>
+        <button class="delete-set-btn" data-id="${data.id}">세트 삭제</button>
       </div>
       
       <div class="kunyomi-box">
         <h3>훈독</h3>
         <div class="word-list">
           <div class="word">
-            <ruby>${kanji}<rt>${kunyomi}</rt></ruby>
+            <ruby>${data.kanji}<rt>${data.kunyomi}</rt></ruby>
           </div>
         </div>
       </div>
@@ -117,14 +147,15 @@ document.addEventListener('DOMContentLoaded', function() {
         <h3>음독</h3>
         <div class="word-list">
           <div class="word">
-            <ruby>${kanji}<rt>${onyomi}</rt></ruby>
+            <ruby>${data.kanji}<rt>${data.onyomi}</rt></ruby>
           </div>
         </div>
       </div>
     `;
     
-    // 획순 토글 기능 추가
+    // 이벤트 리스너 추가
     setTimeout(() => {
+      // 획순 토글 기능
       const toggleBtn = setDiv.querySelector('.stroke-order-toggle');
       const gifDiv = setDiv.querySelector('.stroke-order-gif');
       
@@ -137,8 +168,65 @@ document.addEventListener('DOMContentLoaded', function() {
           toggleBtn.textContent = '획순 보기';
         }
       });
+      
+      // 삭제 버튼 기능
+      const deleteBtn = setDiv.querySelector('.delete-set-btn');
+      deleteBtn.addEventListener('click', function() {
+        const setId = parseInt(this.dataset.id);
+        deleteKanjiSet(setId);
+      });
     }, 100);
     
     return setDiv;
+  }
+  
+  // 한자 세트 삭제 함수
+  function deleteKanjiSet(id) {
+    // 배열에서 해당 ID를 가진 항목 찾기 및 제거
+    kanjiSets = kanjiSets.filter(set => set.id !== id);
+    
+    // 로컬 스토리지 업데이트
+    saveToLocalStorage();
+    
+    // DOM에서 해당 요소 제거
+    const setElement = document.querySelector(`.kanji-set[data-id="${id}"]`);
+    if (setElement) {
+      setElement.remove();
+    }
+  }
+  
+  // 모든 한자 세트 렌더링 함수
+  function renderKanjiSets() {
+    // 기존 세트 요소들 제거 (입력 폼은 유지)
+    const existingSets = document.querySelectorAll('.kanji-set');
+    existingSets.forEach(set => set.remove());
+    
+    // 저장된 세트 데이터로 요소 생성 및 추가
+    kanjiSets.forEach(setData => {
+      const setElement = createKanjiSetElement(setData);
+      kanjiContainer.appendChild(setElement);
+    });
+  }
+  
+  // 로컬 스토리지에 저장
+  function saveToLocalStorage() {
+    localStorage.setItem('kanjiSets', JSON.stringify(kanjiSets));
+  }
+  
+  // 로컬 스토리지에서 불러오기
+  function loadFromLocalStorage() {
+    const savedSets = localStorage.getItem('kanjiSets');
+    if (savedSets) {
+      kanjiSets = JSON.parse(savedSets);
+      
+      // 입력 폼 생성
+      if (!document.querySelector('.kanji-input-form')) {
+        const inputForm = createKanjiInputForm();
+        kanjiContainer.appendChild(inputForm);
+      }
+      
+      // 저장된 세트 표시
+      renderKanjiSets();
+    }
   }
 });
