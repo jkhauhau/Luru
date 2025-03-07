@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>일본어 학습 도구</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>나만의 일본어 학습 도구</h1>
+  </header>
+  
+  <main>
+    <section class="upload-section">
+      <h2>교재 이미지 업로드</h2>
+      <input type="file" id="textbook-image" accept="image/*">
+      <button id="upload-btn">이미지 분석</button>
+    </section>
+    
+    <section class="kanji-sets">
+      <h2>한자 세트</h2>
+      <div id="kanji-container">
+        <!-- 여기에 한자 세트가 표시됩니다 -->
+      </div>
+    </section>
+  </main>
+  
+  <script src="app.js"></script>
+</body>
+</html>
